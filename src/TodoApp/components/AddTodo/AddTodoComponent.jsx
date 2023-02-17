@@ -55,9 +55,12 @@ export const AddTodoComponent = ({ onNewTodo }) => {
 				placeholder="Todo"
 				value={inputValue}
 				onChange={onChange}
+				aria-label="input-task"
 			/>
 
-			<Button type="submit">Add todo</Button>
+			<Button type="submit" aria-label="add-task">
+				Add todo
+			</Button>
 		</form>
 	);
 };
