@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import styled from 'styled-components';
+import DatePicker from 'react-date-picker';
+import 'react-date-picker/dist/DatePicker.css';
+import 'react-calendar/dist/Calendar.css';
 
 const Input = styled.input`
 	width: calc(100% - 105px);
@@ -27,6 +30,7 @@ const charlimit = 300;
 
 export const AddTodoComponent = ({ onNewTodo }) => {
 	const [inputValue, setInputValue] = useState('');
+	const [pickerValue, setPickerValue] = useState(new Date());
 
 	const onChange = ({ target: { value } }) => {
 		setInputValue(value);
@@ -44,8 +48,9 @@ export const AddTodoComponent = ({ onNewTodo }) => {
 
 		if (newInputValue.length <= 0) return;
 
-		onNewTodo(newInputValue);
+		onNewTodo({ todo: newInputValue, date: pickerValue });
 		setInputValue('');
+		setPickerValue(new Date());
 	};
 
 	return (
@@ -56,6 +61,13 @@ export const AddTodoComponent = ({ onNewTodo }) => {
 				value={inputValue}
 				onChange={onChange}
 				aria-label="input-task"
+			/>
+
+			<DatePicker
+				clearIcon={null}
+				minDate={new Date()}
+				onChange={setPickerValue}
+				value={pickerValue}
 			/>
 
 			<Button type="submit" aria-label="add-task">
