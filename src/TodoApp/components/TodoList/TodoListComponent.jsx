@@ -5,7 +5,7 @@ const Input = styled.input`
 	left: 0;
 	height: 15px;
 	width: 25px;
-	background-color: #0bb89b !important;
+	background-color: #0bb89b;
 	accent-color: #0bb89b;
 `;
 
@@ -44,13 +44,18 @@ export const TodoListComponent = ({
 
 	const removeTodo = () => onRemoveTodo(id);
 	return (
-		<Container>
+		<Container aria-label="task-item">
 			<InputContainer>
-				<Input type="checkbox" defaultChecked={completed} onChange={changeTodo} />
+				<Input
+					aria-label="check-task"
+					type="checkbox"
+					defaultChecked={completed}
+					onChange={changeTodo}
+				/>
 				<Task>{todo}</Task>
 			</InputContainer>
 
-			<Delete onClick={removeTodo}>
+			<Delete aria-label="delete-task" onClick={removeTodo}>
 				<div className="trash icon" style={{ color: 'red' }}></div>
 			</Delete>
 		</Container>

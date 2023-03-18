@@ -1,22 +1,31 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
-import { TitleComponent } from './components/Title/TitleComponent';
 import { AddTodoComponent } from './components/AddTodo/AddTodoComponent';
 import { TodoListComponent } from './components/TodoList/TodoListComponent';
 import { getTodos, saveTodos } from './helpers/store';
 
-const s4 = () => {
+const getId = () => {
 	return Math.floor((1 + Math.random()) * 0x10000)
 		.toString(16)
 		.substring(1);
 };
 
 const getIndexById = (list, id) => {
-	const index = list.findIndex((item) => item.id === id);
-
-	return index;
+	return list.findIndex((item) => item.id === id);
 };
+
+const Title = styled.div`
+	font-size: 4rem;
+	font-weight: 700;
+	color: white;
+	background: #5795f4;
+
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 200px;
+`;
 
 const StyledContainer = styled.div`
 	margin: auto;
@@ -53,10 +62,10 @@ export const TodoApp = () => {
 	}, []);
 
 	const onAddTodo = (newTodo) => {
-		if (todo.includes(newTodo)) return;
+		if (todo.find(({ todo }) => todo === newTodo)) return;
 
 		const item = {
-			id: s4(),
+			id: getId(),
 			todo: newTodo,
 			completed: false,
 		};
@@ -95,17 +104,15 @@ export const TodoApp = () => {
 
 	return (
 		<StyledContainer>
-			{/* title */}
-			<TitleComponent />
-
-			{/* input */}
+			<Title>Todo List</Title>
 			<AddTodoComponent onNewTodo={onAddTodo} />
-
-			<RemainingButton>Remaining: {remaining}</RemainingButton>
-			<Button onClick={removeAll}>Delete all</Button>
-
-			{/* Todo List */}
-			<div>
+			<RemainingButton aria-label="remaining-tasks">
+				Remaining: {remaining}
+			</RemainingButton>
+			<Button aria-label="reset-todo-list" onClick={removeAll}>
+				Delete all
+			</Button>
+			<div aria-label="todo-list">
 				{todo.map((todo) => {
 					return (
 						<TodoListComponent
