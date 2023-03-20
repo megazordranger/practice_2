@@ -52,21 +52,23 @@ const RemainingButton = styled(Button)`
 	border: 1px solid #dc3545;
 `;
 
-export const TodoApp = () => {
+export const Home = () => {
 	const [todo, setTodo] = useState([]);
 	const [remaining, setRemaining] = useState([]);
+
 	useEffect(() => {
 		const todoList = getTodos();
 		setTodo(todoList);
 		updateRemaining(todoList);
 	}, []);
 
-	const onAddTodo = (newTodo) => {
+	const onAddTodo = ({ todo: newTodo, date }) => {
 		if (todo.find(({ todo }) => todo === newTodo)) return;
 
 		const item = {
 			id: getId(),
 			todo: newTodo,
+			date,
 			completed: false,
 		};
 		const list = [item, ...todo];

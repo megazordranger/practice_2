@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { TodoApp } from './TodoApp';
+import { Home } from './TodoApp';
 
-describe('Test on <TodoApp />', () => {
+describe('Test on <Home />', () => {
 	const getElements = (screen) => {
 		const input = screen.getByLabelText('input-task');
 		const button = screen.getByLabelText('add-task');
@@ -19,7 +19,7 @@ describe('Test on <TodoApp />', () => {
 	};
 
 	test('should can add 2 tasks with diferent value', () => {
-		render(<TodoApp />);
+		render(<Home />);
 
 		const { input, button } = getElements(screen);
 
@@ -34,7 +34,7 @@ describe('Test on <TodoApp />', () => {
 	});
 
 	test("should can't add 2 tasks with same value", () => {
-		render(<TodoApp />);
+		render(<Home />);
 
 		const { input, button } = getElements(screen);
 
@@ -49,7 +49,7 @@ describe('Test on <TodoApp />', () => {
 	});
 
 	test('should can reset todo list', () => {
-		render(<TodoApp />);
+		render(<Home />);
 
 		const { input, button, reset } = getElements(screen);
 
@@ -68,7 +68,7 @@ describe('Test on <TodoApp />', () => {
 	});
 
 	test('should can mark task as completed', () => {
-		render(<TodoApp />);
+		render(<Home />);
 
 		const { input, button, remaining } = getElements(screen);
 
@@ -87,7 +87,7 @@ describe('Test on <TodoApp />', () => {
 	});
 
 	test('should can delete task', () => {
-		render(<TodoApp />);
+		render(<Home />);
 
 		const { input, button } = getElements(screen);
 
