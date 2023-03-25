@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
+import { useQuery, useMutation } from '@apollo/client';
 
 import { AddTodoComponent } from './components/AddTodo/AddTodoComponent';
 import { TodoListComponent } from './components/TodoList/TodoListComponent';
-import { getTodos, saveTodos } from './helpers/store';
-
-const getId = () => {
-	return Math.floor((1 + Math.random()) * 0x10000)
-		.toString(16)
-		.substring(1);
-};
-
-const getIndexById = (list, id) => {
-	return list.findIndex((item) => item.id === id);
-};
+import {
+	GET_TODOS,
+	GET_TODOS_COUNT,
+	ADD_TODO,
+	TOGGLE_COMPLETED,
+	DELETE_TODO,
+	DELETE_ALL_TODOS,
+} from '../../services/Todo.service';
+import { formatDate } from '../../services/Date.service';
+import { PaginationItem } from '../components/Pagination';
 
 const Title = styled.div`
 	font-size: 4rem;
@@ -53,55 +53,70 @@ const RemainingButton = styled(Button)`
 `;
 
 export const Home = () => {
-	const [todo, setTodo] = useState([]);
-	const [remaining, setRemaining] = useState([]);
+	const [page, setPage] = useState(1);
+	const [addTodo] = useMutation(ADD_TODO);
+	const [toggleCompleted] = useMutation(TOGGLE_COMPLETED);
+	const [deleteTodo] = useMutation(DELETE_TODO);
+	const [deleteAllTodos] = useMutation(DELETE_ALL_TODOS);
+	const { data: { allTodosCount } = {}, refetch: refetchCountTodos } = useQuery(
+		GET_TODOS_COUNT,
+		{ notifyOnNetworkStatusChange: true }
+	);
+	const { data: { allTodos } = {}, refetch } = useQuery(
+		GET_TODOS,
+		{
+			variables: {
+				limit: 10,
+				skip: 0,
+			},
+		},
+		{ notifyOnNetworkStatusChange: true }
+	);
 
-	useEffect(() => {
-		const todoList = getTodos();
-		setTodo(todoList);
-		updateRemaining(todoList);
-	}, []);
-
-	const onAddTodo = ({ todo: newTodo, date }) => {
-		if (todo.find(({ todo }) => todo === newTodo)) return;
+	const onAddTodo = async ({ todo: newTodo, date }) => {
+		const fomatedDate = formatDate(date) + 'T00:00:00.000Z';
 
 		const item = {
-			id: getId(),
-			todo: newTodo,
-			date,
+			content: newTodo,
+			dueDate: fomatedDate,
 			completed: false,
 		};
-		const list = [item, ...todo];
+		await addTodo({ variables: { data: item, userId: 1 } });
 
-		updateTodoList(list);
+		updateTodoList();
 	};
 
-	const onChangeTodo = (id, status) => {
-		const index = getIndexById(todo, id);
-		todo[index].completed = status;
-
-		updateTodoList(todo);
+	const onChangeTodo = async (id) => {
+		await toggleCompleted({ variables: { toggleTodoCompletedId: id } });
+		updateTodoList();
 	};
 
-	const onRemoveTodo = (id) => {
-		const index = getIndexById(todo, id);
-		const list = [...todo];
-		list.splice(index, 1);
-
-		updateTodoList(list);
+	const updatePageOnDelete = () => {
+		if (allTodos?.length === 1 && page > 1) onChangePage(null, page - 1);
 	};
 
-	const removeAll = () => updateTodoList([]);
-
-	const updateTodoList = (todo) => {
-		saveTodos(todo);
-		setTodo(todo);
-		updateRemaining(todo);
+	const onRemoveTodo = async (id) => {
+		await deleteTodo({ variables: { deleteTodoId: id } });
+		updateTodoList();
+		updatePageOnDelete();
 	};
 
-	const updateRemaining = (todo) => {
-		const remainingCounter = todo.filter((item) => !item.completed).length;
-		setRemaining(remainingCounter);
+	const removeAll = async () => {
+		await deleteAllTodos();
+		updateTodoList();
+	};
+
+	const updateTodoList = async () => {
+		refetchCountTodos();
+		refetch();
+	};
+
+	const onChangePage = async (event, page) => {
+		setPage(page);
+		const skip = 10 * (page - 1);
+
+		refetch({ skip });
+		refetchCountTodos();
 	};
 
 	return (
@@ -109,13 +124,16 @@ export const Home = () => {
 			<Title>Todo List</Title>
 			<AddTodoComponent onNewTodo={onAddTodo} />
 			<RemainingButton aria-label="remaining-tasks">
-				Remaining: {remaining}
+				Remaining: {allTodosCount?.count}
 			</RemainingButton>
 			<Button aria-label="reset-todo-list" onClick={removeAll}>
 				Delete all
 			</Button>
+
+			<PaginationItem onChange={onChangePage} />
+
 			<div aria-label="todo-list">
-				{todo.map((todo) => {
+				{allTodos?.map((todo) => {
 					return (
 						<TodoListComponent
 							key={todo.id}

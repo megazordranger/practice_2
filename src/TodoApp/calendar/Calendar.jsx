@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, NavLink } from 'react-router-dom';
 import styled from 'styled-components';
-import { getTodos } from '../home/helpers/store';
+import { useQuery } from '@apollo/client';
+
+import { GET_TODOS_BY_DATE } from '../../services/Todo.service';
+import { formatDate } from '../../services/Date.service';
+import { PaginationItem } from '../components/Pagination';
 
 const List = styled.ul`
 	padding: 0;
@@ -92,6 +96,8 @@ const Container = styled.div`
 	color: #707073;
 `;
 
+const itemsPerPage = 5;
+
 const getDaysArray = function (start, end) {
 	for (
 		var arr = [], dt = new Date(start);
@@ -113,18 +119,6 @@ const getWeek = (date) => {
 	return getDaysArray(wkStart, wkEnd);
 };
 
-const formatDate = (date) => {
-	var d = new Date(date),
-		month = '' + (d.getMonth() + 1),
-		day = '' + d.getDate(),
-		year = d.getFullYear();
-
-	if (month.length < 2) month = '0' + month;
-	if (day.length < 2) day = '0' + day;
-
-	return [year, month, day].join('-');
-};
-
 const getDate = (date) => {
 	const week = getWeek(date || new Date());
 
@@ -143,7 +137,7 @@ const sameDay = (date1, date2) => {
 };
 
 const parseDate = (date) => {
-	return date ? date.split('-') : new Date();
+	return date ? date.split('-') : formatDate(new Date()).split('-');
 };
 
 const getPreviousDay = (date = new Date()) => {
@@ -168,17 +162,30 @@ const isBeforeToday = (dateValue) => {
 };
 
 export const Calendar = () => {
+	const [page, setPage] = useState(1);
 	const { date } = useParams();
 	const [dateParsed, setDateParsed] = useState(parseDate(date));
 	const [week, setWeek] = useState(getDate(date));
-	const [todo, setTodo] = useState([]);
 	const [prevWeekDay, setPrevWeekDay] = useState();
 	const [nextWeekDay, setNextWeekDay] = useState();
+	const { data: { todosByDueDate: allTodos } = {}, refetch: refetchTodos } =
+		useQuery(
+			GET_TODOS_BY_DATE,
+			{
+				variables: {
+					dueDate: new Date(dateParsed),
+					limit: itemsPerPage,
+					skip: 0,
+				},
+			},
+			{ notifyOnNetworkStatusChange: true }
+		);
+
+	const getTodos = async (variables) => {
+		await refetchTodos(variables);
+	};
 
 	useEffect(() => {
-		const todoList = getTodos();
-		setTodo(todoList);
-
 		const parsedDate = parseDate(date);
 		const newWeek = getDate(parsedDate);
 
@@ -186,7 +193,19 @@ export const Calendar = () => {
 		setDateParsed(parsedDate);
 		setPrevWeekDay(getPreviousDay(newWeek[0]));
 		setNextWeekDay(getNextDay(newWeek[6]));
+
+		const fomatedDate = formatDate(parsedDate) + 'T00:00:00.000Z';
+
+		getTodos({ dueDate: fomatedDate, skip: 0 });
+		setPage(1);
 	}, [date]);
+
+	const onChangePage = async (event, page) => {
+		setPage(page);
+		const skip = itemsPerPage * (page - 1);
+
+		refetchTodos({ skip });
+	};
 
 	return (
 		<>
@@ -215,26 +234,30 @@ export const Calendar = () => {
 				</Item>
 			</List>
 
+			<PaginationItem
+				onChange={onChangePage}
+				itemsPerPage={itemsPerPage}
+				date={date}
+				page={page}
+			/>
+
 			<TodoList>
-				{todo.map(
-					({ id, todo, completed, date }) =>
-						sameDay(dateParsed, date) && (
-							<Container key={id}>
-								<ul style={{ listStyleType: 'none' }}>
-									<li>Todo: {todo}</li>
-									<li>Date: {formatDate(date)}</li>
-									<li style={{ display: 'flex' }}>
-										Complete:
-										{
-											<Status>
-												<div className={completed ? 'check' : 'remove'}></div>
-											</Status>
-										}
-									</li>
-								</ul>
-							</Container>
-						)
-				)}
+				{allTodos?.map(({ id, content, completed, dueDate }) => (
+					<Container key={id}>
+						<ul style={{ listStyleType: 'none' }}>
+							<li>Todo: {content}</li>
+							<li>Date: {formatDate(dueDate.split('T')[0].split('-'))}</li>
+							<li style={{ display: 'flex' }}>
+								Complete:
+								{
+									<Status>
+										<div className={completed ? 'check' : 'remove'}></div>
+									</Status>
+								}
+							</li>
+						</ul>
+					</Container>
+				))}
 			</TodoList>
 		</>
 	);
