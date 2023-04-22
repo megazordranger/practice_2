@@ -29,6 +29,9 @@ export const Navbar = () => {
 			<Item>
 				<Link href="/calendar">Calendar</Link>
 			</Item>
+			<Item>
+				<Link href="/search">Search</Link>
+			</Item>
 		</List>
 	);
 };

@@ -35,12 +35,12 @@ const Delete = styled.div`
 
 export const TodoListComponent = ({
 	id,
-	todo,
+	content,
 	completed,
 	onChangeTodo,
 	onRemoveTodo,
 }) => {
-	const changeTodo = ({ target }) => onChangeTodo(id, target.checked);
+	const changeTodo = ({ target }) => onChangeTodo(id);
 
 	const removeTodo = () => onRemoveTodo(id);
 	return (
@@ -52,7 +52,7 @@ export const TodoListComponent = ({
 					defaultChecked={completed}
 					onChange={changeTodo}
 				/>
-				<Task>{todo}</Task>
+				<Task>{content}</Task>
 			</InputContainer>
 
 			<Delete aria-label="delete-task" onClick={removeTodo}>
