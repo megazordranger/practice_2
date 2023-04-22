@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, NavLink } from 'react-router-dom';
 import styled from 'styled-components';
+import VirtualScroll from 'react-dynamic-virtual-scroll';
 import { useQuery } from '@apollo/client';
 
 import { GET_TODOS_BY_DATE } from '../../services/Todo.service';
@@ -79,7 +80,9 @@ const Status = styled.span`
 
 const TodoList = styled.div`
 	margin: auto;
-	max-width: 300px;
+	max-width: 500px;
+	max-height: 90vh;
+	overflow: auto;
 	font-family: Helvetica, Arial, sans-serif;
 `;
 
@@ -96,7 +99,7 @@ const Container = styled.div`
 	color: #707073;
 `;
 
-const itemsPerPage = 5;
+const itemsPerPage = 10;
 
 const getDaysArray = function (start, end) {
 	for (
@@ -162,6 +165,9 @@ const isBeforeToday = (dateValue) => {
 };
 
 export const Calendar = () => {
+	const [loading, setLoading] = useState(false);
+	const [limit, setLimit] = useState(itemsPerPage);
+	const [today, setToday] = useState();
 	const [page, setPage] = useState(1);
 	const { date } = useParams();
 	const [dateParsed, setDateParsed] = useState(parseDate(date));
@@ -196,6 +202,8 @@ export const Calendar = () => {
 
 		const fomatedDate = formatDate(parsedDate) + 'T00:00:00.000Z';
 
+		setToday(formatDate(parsedDate));
+
 		getTodos({ dueDate: fomatedDate, skip: 0 });
 		setPage(1);
 	}, [date]);
@@ -204,7 +212,18 @@ export const Calendar = () => {
 		setPage(page);
 		const skip = itemsPerPage * (page - 1);
 
-		refetchTodos({ skip });
+		await refetchTodos({ skip });
+	};
+
+	const handleScroll = async (e) => {
+		const bottom =
+			e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+		if (bottom && !loading) {
+			setLoading(true);
+			setLimit(limit + itemsPerPage);
+			await refetchTodos({ limit });
+			setLoading(false);
+		}
 	};
 
 	return (
@@ -234,14 +253,44 @@ export const Calendar = () => {
 				</Item>
 			</List>
 
-			<PaginationItem
+			{/* <PaginationItem
 				onChange={onChangePage}
 				itemsPerPage={itemsPerPage}
-				date={date}
+				date={date || today}
 				page={page}
+			/> */}
+
+			<VirtualScroll
+				style={{ height: '90vh', overflow: 'auto', display: 'none' }}
+				minItemHeight={10}
+				buffer={10}
+				totalLength={allTodos?.length ? 500 : 0}
+				renderItem={(rowIndex) => {
+					if (!allTodos[rowIndex]) return <div></div>;
+
+					const { id, content, completed, dueDate } = allTodos[rowIndex];
+
+					return (
+						<Container key={id}>
+							<ul style={{ listStyleType: 'none' }}>
+								<li>Todo: {content}</li>
+								<li>Date: {formatDate(dueDate.split('T')[0].split('-'))}</li>
+								<li style={{ display: 'flex' }}>
+									Complete:
+									{
+										<Status>
+											{/* <div className={completed ? 'check' : 'remove'}></div> */}
+											{completed ? 'No' : 'Yes'}
+										</Status>
+									}
+								</li>
+							</ul>
+						</Container>
+					);
+				}}
 			/>
 
-			<TodoList>
+			<TodoList onScroll={handleScroll}>
 				{allTodos?.map(({ id, content, completed, dueDate }) => (
 					<Container key={id}>
 						<ul style={{ listStyleType: 'none' }}>
@@ -251,7 +300,8 @@ export const Calendar = () => {
 								Complete:
 								{
 									<Status>
-										<div className={completed ? 'check' : 'remove'}></div>
+										{/* <div className={completed ? 'check' : 'remove'}></div> */}
+										{completed ? 'No' : 'Yes'}
 									</Status>
 								}
 							</li>

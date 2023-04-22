@@ -1,5 +1,19 @@
 import { gql } from '@apollo/client';
 
+export const GET_TODO = gql`
+	query GetTodo($todoId: Int!) {
+		todo(id: $todoId) {
+			id
+			content
+			dueDate
+			comments {
+				content
+				id
+			}
+		}
+	}
+`;
+
 export const GET_TODOS = gql`
 	query GetTodos($skip: Int!, $limit: Int!) {
 		allTodos(skip: $skip, limit: $limit) {
@@ -69,6 +83,30 @@ export const DELETE_ALL_TODOS = gql`
 	mutation DeleteAllTodos {
 		deleteAllTodos {
 			count
+		}
+	}
+`;
+
+export const CREATE_COMMENT = gql`
+	mutation CreateComment($data: CommentCreateInput!, $todoId: Int!) {
+		createComment(data: $data, todoId: $todoId) {
+			content
+			createdAt
+			id
+			updatedAt
+		}
+	}
+`;
+
+export const SEARCH = gql`
+	query Search($key: String!) {
+		todoSearch(key: $key) {
+			todoId
+			id
+			content
+			comments {
+				content
+			}
 		}
 	}
 `;

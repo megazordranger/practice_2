@@ -14,6 +14,7 @@ import {
 } from '../../services/Todo.service';
 import { formatDate } from '../../services/Date.service';
 import { PaginationItem } from '../components/Pagination';
+import { TodoModal } from '../../shared/TodoModal/TodoModal';
 
 const Title = styled.div`
 	font-size: 4rem;
@@ -53,6 +54,14 @@ const RemainingButton = styled(Button)`
 `;
 
 export const Home = () => {
+	const [todoId, setTodoId] = useState();
+	const [open, setOpen] = useState(false);
+	const handleOpen = (id) => () => {
+		setTodoId(id);
+		setOpen(true);
+	};
+	const handleClose = () => setOpen(false);
+
 	const [page, setPage] = useState(1);
 	const [addTodo] = useMutation(ADD_TODO);
 	const [toggleCompleted] = useMutation(TOGGLE_COMPLETED);
@@ -135,15 +144,18 @@ export const Home = () => {
 			<div aria-label="todo-list">
 				{allTodos?.map((todo) => {
 					return (
-						<TodoListComponent
-							key={todo.id}
-							{...todo}
-							onChangeTodo={onChangeTodo}
-							onRemoveTodo={onRemoveTodo}
-						/>
+						<span key={todo.id} onClick={handleOpen(todo.id)}>
+							<TodoListComponent
+								{...todo}
+								onChangeTodo={onChangeTodo}
+								onRemoveTodo={onRemoveTodo}
+							/>
+						</span>
 					);
 				})}
 			</div>
+
+			<TodoModal open={open} handleClose={handleClose} todoId={todoId} />
 		</StyledContainer>
 	);
 };
